@@ -30,10 +30,7 @@ var postSchema = new mongoose.Schema({
 		type: String,
 		required: true
 	},
-	originalMessage: {
-		type: String,
-		required: true
-	},
+	publishedMessage: String,
 	submitTime: {
 		type: Date,
 		required: true
