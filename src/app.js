@@ -13,7 +13,7 @@ var publish = async (post) => {
 	var publishMessage = '#哭哭北科' + post.serialNumber + 
 		'\n' + post.message +
 		'\n\n🎺 匿名哭哭: ' + config.ccUrl + 
-		'\n😢 哭哭時間: ' + timeString(new Date());
+		'\n😢 哭哭時間: ' + timeString(post.submitTime);
 
 	try {
 		var response = await rp({
