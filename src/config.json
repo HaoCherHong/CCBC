@@ -1,6 +1,8 @@
 {
-	"pageId": 397722447285523,
+	"appId": 650710611766995,
+	"appSecret": "178c3373a62b8912e44413c7232a78a2",
+	"pageId": 232579767172516,
 	"port": 1123,
-	"pageAccessToken": "EAACEdEose0cBAOVIRu5xcHE1wVR1K4iT46VhXK8HZCul8pndokqi8nO62IHF7SvOy56unXmWI49wRyFBs4iTj9BV8MyJoNIPj0UkSeyFD2bKZAlXci8OedtyZBzXi2LZA2KbXj959ZCZAh3iWpvSrHUccfXFVaVH8K7qD7l596ad8mLkX0cPGV",
-	"kobeInterval": 600000
+	"ccInterval": 600000,
+	"ccUrl": ""
 }

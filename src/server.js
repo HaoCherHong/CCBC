@@ -1,7 +1,8 @@
 var express = require('express'),
 	bodyParser = require('body-parser'),
 	model = require('./model.js'),
-	config = require('./config.json');
+	config = require('./config.js')(),
+	rp = require('request-promise');
 
 var app = express();
 
@@ -12,10 +13,6 @@ app.use(bodyParser.urlencoded({
 
 // parse application/json
 app.use(bodyParser.json());
-
-const timeString = (date) => {
-	return date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate() + ' ' + date.getHours() + ':' + ('0' + date.getMinutes()).substr(-2);
-}
 
 var newPost = async(message) => {
 
@@ -31,10 +28,6 @@ var newPost = async(message) => {
 
 	console.log(serialNumber + ': ' + message);
 
-	message = '#哭哭北科' + serialNumber + '\n' + message;
-	message += '\n\n' + timeString(new Date());
-
-
 	var doc = await model.Post.create({
 		serialNumber: serialNumber,
 		submitTime: new Date(),
@@ -43,6 +36,21 @@ var newPost = async(message) => {
 
 	return doc;
 }
+
+var exchangeToken = async (shortLivedToken) => {
+
+	var longLivedToken = await rp('https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=' + config.appId + '&client_secret=' + config.appSecret + '&fb_exchange_token=' + encodeURIComponent(shortLivedToken));
+	longLivedToken = /access_token=(.+)/.exec(longLivedToken)[1];
+	
+	return longLivedToken;
+}
+
+var updatePageToken = async () => {
+	var pageAccessToken = await rp('https://graph.facebook.com/' + config.pageId + '?fields=access_token&access_token=' + config.longLivedToken);
+	pageAccessToken = JSON.parse(pageAccessToken)['access_token'];
+	config.pageToken = pageAccessToken;
+	config.save();
+};
 
 app.use(express.static('public'));
 
@@ -53,7 +61,7 @@ app.get('/api/queueNumber', async(req, res, next) => {
 	res.json(count);
 })
 
-app.post('/api/kobe', async(req, res, next) => {
+app.post('/api/cc', async(req, res, next) => {
 	if (req.body.message == undefined)
 		return next('message required');
 
@@ -69,6 +77,27 @@ app.post('/api/kobe', async(req, res, next) => {
 	}
 })
 
+app.get('/api/setAccessToken', async(req, res, next)=> {
+	if(req.ip != '::ffff:127.0.0.1' && req.ip != '::1')
+		return next('forbidden');
+	if(req.query.accessToken == undefined)
+		return next('accessToken required');
+
+	try {
+		var longLivedToken = await exchangeToken(req.query.accessToken);
+		console.log(longLivedToken);
+		config.longLivedToken = longLivedToken;
+		config.save();
+		res.send({
+			success: true
+		});
+		updatePageToken();
+	} catch(err) {
+		next(err);
+	}
+
+})
+
 app.use((err, req, res, next) => {
 	console.error(err);
 	res.send(err);
@@ -76,6 +105,7 @@ app.use((err, req, res, next) => {
 
 var main = async() => {
 	await model.connect();
+	await updatePageToken();
 	app.listen(config.port, function() {
 		console.log('Example app listening on port ' + config.port);
 	});

@@ -1,23 +1,38 @@
 var model = require('./model.js'),
-	config = require('./config.json'),
+	config = require('./config.js')(),
 	rp = require('request-promise');
 
-var lastPostTime;
+const timeString = (date) => {
+	return date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate() + ' ' + date.getHours() + ':' + ('0' + date.getMinutes()).substr(-2);
+}
 
 var publish = async (post) => {
-	var response = await rp({
-		method: 'POST',
-		uri: 'https://graph.facebook.com/' + config.pageId + '/feed?access_token=' + config.pageAccessToken + '&message=' + encodeURIComponent(post.message)
-	});
-	response = JSON.parse(response);
+
+	var publishMessage = '#哭哭北科' + post.serialNumber + 
+		'\n' + post.message +
+		'\n\n🎺 匿名哭哭: ' + config.ccUrl + 
+		'\n😢 哭哭時間: ' + timeString(new Date());
+
+	try {
+		var response = await rp({
+			method: 'POST',
+			uri: 'https://graph.facebook.com/' + config.pageId + '/feed?access_token=' + config.pageToken + '&message=' + encodeURIComponent(publishMessage),
+			json: true
+		});
+	} catch(err) {
+		throw err.message;
+	}
 
 	if(!response.id)
 		throw response;
+
+	
 
 	var postId = (/_(\d+)$/).exec(response.id)[1];
 
 	post.published = true;
 	post.publishTime = new Date();
+	post.publishedMessage = publishMessage;
 	post.postId = postId;
 	await post.save();
 
@@ -33,15 +48,17 @@ var sleep = function(time) {
 var update = async function () {
 	var nextPost = await model.Post.findOne({published: false}).sort({serialNumber: 1});
 	if(nextPost != null) {
-		if(lastPostTime == undefined || ((new Date()).getTime() - lastPostTime.getTime() >= config.kobeInterval))  {
+		if(config.lastPostTime == undefined || ((new Date()).getTime() - config.lastPostTime.getTime() >= config.ccInterval))  {
 			try {
 				var res = await publish(nextPost);
 				console.log(res);
-				lastPostTime = new Date();
+				config.lastPostTime = new Date();
+				config.save();
 
 				//Sleep for interval time
-				await sleep(config.kobeInterval);
+				await sleep(config.ccInterval);
 			} catch(e) {
+				console.log(4);
 				console.error(e);
 			}
 		}
@@ -53,6 +70,9 @@ var update = async function () {
 
 var main = async () => {
 	await model.connect();
+
+	if(config.lastPostTime != undefined)
+		config.lastPostTime = new Date(config.lastPostTime);
 
 	while(true) {
 		await update();
