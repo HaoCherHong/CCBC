@@ -58,7 +58,6 @@ var update = async function () {
 				//Sleep for interval time
 				await sleep(config.ccInterval);
 			} catch(e) {
-				console.log(4);
 				console.error(e);
 			}
 		}
@@ -74,8 +73,13 @@ var main = async () => {
 	if(config.lastPostTime != undefined)
 		config.lastPostTime = new Date(config.lastPostTime);
 
+	console.log('Entering main loop...');
 	while(true) {
-		await update();
+		try {
+			await update();
+		} catch(err) {
+			console.error(err);
+		}
 	}
 
 	model.connection.close();
