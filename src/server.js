@@ -2,9 +2,12 @@ var express = require('express'),
 	bodyParser = require('body-parser'),
 	model = require('./model.js'),
 	config = require('./config.js')(),
-	rp = require('request-promise');
+	rp = require('request-promise'),
+	emojiFavicon = require('emoji-favicon');
 
 var app = express();
+
+app.use(emojiFavicon('cry'));
 
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({

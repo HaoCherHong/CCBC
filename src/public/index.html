@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>哭哭北科 2016</title>
+		<title>哭哭北科 </title>
 		<!-- Latest compiled and minified CSS -->
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 
@@ -19,7 +19,7 @@
 
 		<div class="container">
 			<div class="jumbotron">
-				<h1>哭哭北科 2016</h1>
+				<h1>哭哭北科 <small>beta</small></h1>
 				<p>自由地哭哭，完全匿名。</p>
 				<p><a class="btn btn-primary btn-lg" href="#" role="button">粉絲專頁</a></p>
 			</div>
@@ -29,7 +29,7 @@
 			<div id="info-queue" class="alert alert-info" role="alert"></div>
 			<form>
 				<textarea id="message" class="form-control" rows="3" placeholder="至少10個字"></textarea>
-				<button id="kobe" class="btn btn-primary btn-block" disabled>哭哭啦!</button>
+				<button id="kobe" class="btn btn-primary btn-block" disabled>哭哭!</button>
 			</form>
 		</div>
 
@@ -44,7 +44,7 @@
 			$('#kobe').click(function() {
 				var message = $('#message').val();
 				$('#kobe, #message').prop('disabled', true);
-				$.post('/api/kobe', { message: message }, function(data) {
+				$.post('/api/cc', { message: message }, function(data) {
 					$('#info-success').text('哭哭成功，請等待粉絲專頁發文');
 					$('#info-success').show();
 					updateQueueNumber();
