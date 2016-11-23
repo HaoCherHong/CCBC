@@ -3,6 +3,8 @@ var model = require('./model.js'),
 	rp = require('request-promise');
 
 const timeString = (date) => {
+	if(config.timezoneOffset)
+		date = new Date(date.getTime() + config.timezoneOffset);
 	return date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate() + ' ' + date.getHours() + ':' + ('0' + date.getMinutes()).substr(-2);
 }
 
