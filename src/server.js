@@ -19,6 +19,7 @@ app.use(bodyParser.json());
 
 var newPost = async(message) => {
 
+	
 	var latestPost = await model.Post.findOne(null, {
 		_id: 0,
 		serialNumber: 1
@@ -59,7 +60,8 @@ app.use(express.static('public'));
 
 app.get('/api/queueNumber', async(req, res, next) => {
 	var count = await model.Post.count({
-		published: false
+		published: false,
+		failed: false
 	});
 	res.json(count);
 })
@@ -68,7 +70,23 @@ app.post('/api/cc', async(req, res, next) => {
 	if (req.body.message == undefined)
 		return next('message required');
 
+	if(req.body.message.length < 10)
+		return next('message is too short');
+	
 	try {
+		//Check if post with same message exists
+		var samePost = await model.Post.findOne({message: req.body.message}, {_id: 0, postId: 1, submitTime: 1});
+
+		if(samePost != null) {
+			return res.json({
+				success: false,
+				errorCode: 500000,
+				message: '這個東西已經有人哭過了',
+				samePost: samePost
+			});
+		}
+
+		//Create a new post
 		var doc = await newPost(req.body.message);
 
 		res.json({
@@ -108,7 +126,11 @@ app.use((err, req, res, next) => {
 
 var main = async() => {
 	await model.connect();
-	await updatePageToken();
+	try {
+		await updatePageToken();
+	} catch(err) {
+		console.error(err.message);
+	}
 	app.listen(config.port, function() {
 		console.log('Example app listening on port ' + config.port);
 	});

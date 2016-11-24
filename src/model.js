@@ -21,6 +21,12 @@ var postSchema = new mongoose.Schema({
 		required: true,
 		default: false
 	},
+	failed: {
+		type: Boolean,
+		required: true,
+		default: false
+	},
+	error: mongoose.Schema.Types.Mixed,
 	serialNumber: {
 		type: Number,
 		required: true

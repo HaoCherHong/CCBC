@@ -22,13 +22,11 @@ var publish = async (post) => {
 			json: true
 		});
 	} catch(err) {
-		throw err.message;
+		throw err.response.body;
 	}
 
 	if(!response.id)
 		throw response;
-
-	
 
 	var postId = (/_(\d+)$/).exec(response.id)[1];
 
@@ -48,8 +46,9 @@ var sleep = function(time) {
 }
 
 var update = async function () {
-	var nextPost = await model.Post.findOne({published: false}).sort({serialNumber: 1});
+	var nextPost = await model.Post.findOne({published: false, failed: false}).sort({serialNumber: 1});
 	if(nextPost != null) {
+		console.log('trying to post ' + nextPost + '...');
 		if(config.lastPostTime == undefined || ((new Date()).getTime() - config.lastPostTime.getTime() >= config.ccInterval))  {
 			try {
 				var res = await publish(nextPost);
@@ -59,8 +58,11 @@ var update = async function () {
 
 				//Sleep for interval time
 				await sleep(config.ccInterval);
-			} catch(e) {
-				console.error(e);
+			} catch(err) {
+				console.error(err);
+				nextPost.failed = true;
+				nextPost.error = err;
+				await nextPost.save();
 			}
 		}
 	} else {

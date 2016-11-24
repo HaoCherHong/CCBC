@@ -2,18 +2,11 @@
 <html>
 	<head>
 		<title>哭哭北科 </title>
-		<!-- Latest compiled and minified CSS -->
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-
-		<!-- Optional theme -->
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
 		<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-
-		<!-- Latest compiled and minified JavaScript -->
 		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-
-		
+		<script src="/config.js"></script>
 	</head>
 	<body>
 
@@ -21,11 +14,12 @@
 			<div class="jumbotron">
 				<h1>哭哭北科 <small>beta</small></h1>
 				<p>自由地哭哭，完全匿名。</p>
-				<p><a class="btn btn-primary btn-lg" href="https://www.facebook.com/232579767172516/" target="_blank" role="button">粉絲專頁</a></p>
+				<p><a id="link-page" class="btn btn-primary btn-lg" href="" target="_blank" role="button">粉絲專頁</a></p>
 			</div>
 
 			<h2>我要哭哭</h2>
 			<div id="info-success" class="alert alert-success" role="alert"></div>
+			<div id="info-error" class="alert alert-danger" role="alert"></div>
 			<div id="info-queue" class="alert alert-info" role="alert"></div>
 			<form>
 				<textarea id="message" class="form-control" rows="3" placeholder="至少10個字"></textarea>
@@ -45,9 +39,11 @@
 
 	    <script type="text/javascript">
 
-			$('#info-success').hide();
+	    	$('#link-page').attr('href', 'https://www.facebook.com/' + config.pageId + '/');
 
-			$('#message').on('keydown', function(e) {
+			$('#info-success, #info-error').hide();
+
+			$('#message').on('keyup', function(e) {
 				$('#kobe').prop('disabled', e.target.value.length < 10);
 			});
 
@@ -58,16 +54,31 @@
 
 					ga('send', 'event', 'cry', 'cry');
 
-					$('#info-success').text('哭哭成功，請等待粉絲專頁發文');
-					$('#info-success').show();
-					updateQueueNumber();
+					if(data.success) {
+						$('#info-success').text('哭哭成功，請等待粉絲專頁發文').slideDown();
+						$('#kobe, #message').slideUp();
+						$('#info-error').hide();
+						updateQueueNumber();
+					} else {
+						$('#info-error').text(data.message).slideDown();
+						$('#kobe, #message').prop('disabled', false);
+
+						if(data.errorCode == 500000) {
+							if(data.samePost.postId != undefined) {
+								setTimeout(function() {
+									window.location = 'https://www.facebook.com/permalink.php?story_fbid=' + data.samePost.postId + '&id=' + config.pageId;
+								}, 1500);
+							}
+						}
+					}
+					
 				});
 			})
 
 			var updateQueueNumber = function() {
 				$.get('/api/queueNumber', function(queueNumber) {
 					console.log(queueNumber);
-					$('#info-queue').text('目前有' + queueNumber + '個哭哭正在排隊');
+					$('#info-queue').text('目前有' + queueNumber + '個同學排隊要哭哭');
 				})
 			}
 			setInterval(updateQueueNumber, 10000);
