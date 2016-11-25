@@ -1,5 +1,6 @@
 var model = require('./model.js'),
 	config = require('./config.js')(),
+	ccImage = require('./cc-image.js'),
 	rp = require('request-promise');
 
 const timeString = (date) => {
@@ -11,25 +12,55 @@ const timeString = (date) => {
 var publish = async (post) => {
 
 	var publishMessage = '#哭哭北科' + post.serialNumber + 
-		'\n' + post.message +
+		(post.mode == 'text' ? '\n' + post.message : '') +
 		'\n\n🎺 匿名哭哭: ' + config.ccUrl + 
 		'\n😢 哭哭時間: ' + timeString(post.submitTime);
 
+	if(post.mode == 'ccImage') {
+		//Post CC-Image
+		var uri = 'https://graph.facebook.com/' + config.pageId + '/photos?access_token=' + config.pageToken + '&caption=' + encodeURIComponent(publishMessage);
+		var img = await ccImage(post.message, {
+			stream: false
+		});
+		var formData = {
+			source: {
+				value: img.buffer,
+				options: {
+			    	filename: 'ccImage.png',
+			    	contentType: 'image/png'
+			    }
+			}
+		}
+	} else {
+		//Post Plain Text
+		var uri = 'https://graph.facebook.com/' + config.pageId + '/feed?access_token=' + config.pageToken + '&message=' + encodeURIComponent(publishMessage);
+	}
+
 	try {
+		//POST request
 		var response = await rp({
 			method: 'POST',
-			uri: 'https://graph.facebook.com/' + config.pageId + '/feed?access_token=' + config.pageToken + '&message=' + encodeURIComponent(publishMessage),
-			json: true
+			uri: uri,
+			json: true,
+			formData: formData
 		});
 	} catch(err) {
-		throw err.response.body;
+		if(err.response)
+			throw err.response.body;
+		else
+			throw err;
 	}
 
 	if(!response.id)
 		throw response;
 
-	var postId = (/_(\d+)$/).exec(response.id)[1];
+	//Get Post Id
+	if(post.mode == 'ccImage')
+		var postId = response.id;
+	else
+		var postId = (/_(\d+)$/).exec(response.id)[1];
 
+	//Set post as published
 	post.published = true;
 	post.publishTime = new Date();
 	post.publishedMessage = publishMessage;

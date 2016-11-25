@@ -36,6 +36,11 @@ var postSchema = new mongoose.Schema({
 		type: String,
 		required: true
 	},
+	mode: {
+		type: String,
+		required: true,
+		enum: ['text', 'ccImage']
+	},
 	publishedMessage: String,
 	submitTime: {
 		type: Date,

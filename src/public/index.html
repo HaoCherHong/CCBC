@@ -22,8 +22,16 @@
 			<div id="info-error" class="alert alert-danger" role="alert"></div>
 			<div id="info-queue" class="alert alert-info" role="alert"></div>
 			<form>
-				<textarea id="message" class="form-control" rows="3" placeholder="至少10個字"></textarea>
-				<button id="kobe" class="btn btn-primary btn-block" disabled>哭哭!</button>
+				<label class="radio-inline">
+					<input type="radio" name="mode" value="text" checked> 純文字
+				</label>
+				<label class="radio-inline">
+					<input type="radio" name="mode" value="ccImage"> 哭哭文字圖
+				</label>
+
+				<textarea id="message" name="message" class="form-control" rows="3" placeholder="至少10個字"></textarea>
+				<center><img id="cc-image-preview"></center>
+				<button type="submit" class="btn btn-primary btn-block" disabled>哭哭 😢</button>
 			</form>
 		</div>
 
@@ -43,25 +51,40 @@
 
 			$('#info-success, #info-error').hide();
 
+			$('#cc-image-preview').hide();
+
 			$('#message').on('keyup', function(e) {
-				$('#kobe').prop('disabled', e.target.value.length < 10);
+				$('button:submit').prop('disabled', e.target.value.length < 10);
+				if($('input:radio:checked[name=mode]').val() == 'ccImage') {
+					updateCCPreview();
+				}
 			});
 
-			$('#kobe').click(function() {
-				var message = $('#message').val();
-				$('#kobe, #message').prop('disabled', true);
-				$.post('/api/cc', { message: message }, function(data) {
+			$('input:radio[name=mode]').change(function(e){
+				$('#cc-image-preview').toggle(e.target.value == 'ccImage');
+				if(e.target.value == 'ccImage') {
+					updateCCPreview();
+				}
+		    });
 
+			$('form').submit(function(e) {
+				e.preventDefault();
+
+				$('button:submit').prop('disabled', true);
+				$('#message').prop('readonly', true);
+
+
+				$.post('/api/cc', $(this).serialize(), function(data) {
 					ga('send', 'event', 'cry', 'cry');
-
 					if(data.success) {
 						$('#info-success').text('哭哭成功，請等待粉絲專頁發文').slideDown();
-						$('#kobe, #message').slideUp();
+						$('form').slideUp();
 						$('#info-error').hide();
 						updateQueueNumber();
 					} else {
 						$('#info-error').text(data.message).slideDown();
-						$('#kobe, #message').prop('disabled', false);
+						$('button:submit').prop('disabled', false);
+						$('#message').prop('readonly', false);
 
 						if(data.errorCode == 500000) {
 							if(data.samePost.postId != undefined) {
@@ -75,10 +98,17 @@
 				});
 			})
 
+			var updateCCPreview = function() {
+				var message = $('#message').val() || '哭哭預覽圖';
+				$('#cc-image-preview').attr('src', '/api/ccImage/' + encodeURIComponent(message));
+			}
+
 			var updateQueueNumber = function() {
 				$.get('/api/queueNumber', function(queueNumber) {
-					console.log(queueNumber);
-					$('#info-queue').text('目前有' + queueNumber + '個同學排隊要哭哭');
+					if(queueNumber > 0)
+						$('#info-queue').text('目前有' + queueNumber + '個同學排隊要哭哭');
+					else
+						$('#info-queue').text('同學們現在都笑笑的');
 				})
 			}
 			setInterval(updateQueueNumber, 10000);
