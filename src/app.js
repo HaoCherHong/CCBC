@@ -31,9 +31,19 @@ var publish = async (post) => {
 			    }
 			}
 		}
-	} else {
+	} else if(post.mode == 'text') {
 		//Post Plain Text
-		var uri = 'https://graph.facebook.com/' + config.pageId + '/feed?access_token=' + config.pageToken + '&message=' + encodeURIComponent(publishMessage);
+
+		//Check if there is link
+		var linkRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi,
+			match;
+
+		if(match = linkRegex.exec(post.message))
+			var link = match;
+
+		var uri = 'https://graph.facebook.com/' + config.pageId + '/feed?access_token=' + config.pageToken + '&message=' + encodeURIComponent(publishMessage) + ( link ? '&link=' + encodeURIComponent(link) : '');
+	} else {
+		throw {error: 'unexpected mode'};
 	}
 
 	try {
