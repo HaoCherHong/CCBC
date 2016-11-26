@@ -39,7 +39,7 @@ var publish = async (post) => {
 			match;
 
 		if(match = linkRegex.exec(post.message))
-			var link = match;
+			var link = match[0];
 
 		var uri = 'https://graph.facebook.com/' + config.pageId + '/feed?access_token=' + config.pageToken + '&message=' + encodeURIComponent(publishMessage) + ( link ? '&link=' + encodeURIComponent(link) : '');
 	} else {
