@@ -44,19 +44,89 @@ var newPost = async(params) => {
 	return doc;
 }
 
+var exchangeAccessTokenFromCode = async(code, redirectUri) => {
+	var accessToken = await rp({
+		uri: 'https://graph.facebook.com/v2.8/oauth/access_token?client_id=' + config.appId + '&client_secret=' + config.appSecret + '&code=' + encodeURIComponent(code) + '&redirect_uri=' + encodeURIComponent(redirectUri),
+		json: true
+	});
+
+	return accessToken.access_token;
+}
+
+var checkIsAdmin = async(accessToken, next) => {
+	var uri = next || 'https://graph.facebook.com/me/accounts?access_token=' + encodeURIComponent(accessToken) + '&fields=accounts{app_id}&limit=1';
+	console.log(uri);
+	var accounts = await rp({
+		uri: uri,
+		json: true
+	});
+
+	//No data in this page, return false
+	if (accounts.data.length == 0)
+		return false;
+
+	var pageIds = accounts.data.map((object) => object.id);
+
+	//Check if page id exists in returned array
+	if (pageIds.indexOf(config.pageId.toString()) != -1)
+		return true;
+
+	//Search for next page if accounts.paging.next returned, otherwise returns false
+	if (accounts.paging.next)
+		return await checkIsAdmin(accessToken, accounts.paging.next);
+	else
+		return false;
+}
+
 var exchangeToken = async(shortLivedToken) => {
-	var longLivedToken = await rp('https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=' + config.appId + '&client_secret=' + config.appSecret + '&fb_exchange_token=' + encodeURIComponent(shortLivedToken));
-	longLivedToken = /access_token=(.+)/.exec(longLivedToken)[1];
+	try {
+		var longLivedToken = await rp('https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=' + config.appId + '&client_secret=' + config.appSecret + '&fb_exchange_token=' + encodeURIComponent(shortLivedToken));
+		longLivedToken = /access_token=(.+)/.exec(longLivedToken)[1];
+	} catch (err) {
+		if (err.response)
+			throw err.response;
+		else
+			throw err;
+	}
 
 	return longLivedToken;
 }
 
 var updatePageToken = async() => {
-	var pageAccessToken = await rp('https://graph.facebook.com/' + config.pageId + '?fields=access_token&access_token=' + config.longLivedToken);
+	console.log('Updating page token...');
+	try {
+		var pageAccessToken = await rp('https://graph.facebook.com/' + config.pageId + '?fields=access_token&access_token=' + config.longLivedToken);
+	} catch (err) {
+		if (err.response)
+			throw err.response;
+		else
+			throw err;
+	}
+	console.log('pageAccessToken: ' + pageAccessToken);
 	pageAccessToken = JSON.parse(pageAccessToken)['access_token'];
 	config.pageToken = pageAccessToken;
 	config.save();
+	console.log('Page token updated.');
 };
+
+app.get(/^\/manage(\.html)?/, async(req, res, next) => {
+	var redirectUri = req.protocol + '://' + req.get('host') + req.originalUrl;
+	if (req.query.code == undefined) {
+		//Redirect to facebook login page
+		var url = 'https://www.facebook.com/v2.8/dialog/oauth?scope=manage_pages,publish_pages,read_page_mailboxes,pages_show_list,pages_manage_cta,pages_manage_instant_articles&response_type=code&client_id=' + config.appId +
+			'&redirect_uri=' + encodeURIComponent(redirectUri);
+		return res.redirect(url);
+	}
+	try {
+		var accessToken = await exchangeAccessTokenFromCode(req.query.code, redirectUri);
+		var isAdmin = await checkIsAdmin(accessToken);
+		if (!isAdmin)
+			throw 'user is not admin of this page';
+		next();
+	} catch (err) {
+		res.redirect('/');
+	}
+});
 
 app.use(express.static('public'));
 
@@ -85,7 +155,7 @@ app.get('/api/queueNumber', async(req, res, next) => {
 app.post('/api/cc', async(req, res, next) => {
 	if (req.body.message == undefined)
 		return next('message required');
-	if(req.body.mode == undefined)
+	if (req.body.mode == undefined)
 		return next('mode required');
 
 	if (req.body.message.length < 10)
@@ -126,12 +196,14 @@ app.post('/api/cc', async(req, res, next) => {
 })
 
 app.get('/api/setAccessToken', async(req, res, next) => {
-	if (req.ip != '::ffff:127.0.0.1' && req.ip != '::1')
-		return next('forbidden');
 	if (req.query.accessToken == undefined)
 		return next('accessToken required');
 
 	try {
+		var isAdmin = await checkIsAdmin(req.query.accessToken);
+		if (!isAdmin)
+			return res.status(403).send('forbidden');
+
 		var longLivedToken = await exchangeToken(req.query.accessToken);
 		console.log(longLivedToken);
 		config.longLivedToken = longLivedToken;
@@ -147,6 +219,8 @@ app.get('/api/setAccessToken', async(req, res, next) => {
 })
 
 app.use((err, req, res, next) => {
+	if (err.response)
+		err = err.response.body;
 	console.error(err);
 	res.send(err);
 })
@@ -159,7 +233,7 @@ var main = async() => {
 		console.error(err.message);
 	}
 	app.listen(config.port, function() {
-		console.log('Example app listening on port ' + config.port);
+		console.log('App is listening on port ' + config.port);
 	});
 }
 

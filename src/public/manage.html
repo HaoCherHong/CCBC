@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Manage</title>
+<meta charset="UTF-8">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+	<script src="/config.js"></script>
+</head>
+<body>
+
+<script>
+	$(function() {
+
+		var update = function() {
+			location = 'https://www.facebook.com/v2.8/dialog/oauth?client_id=' + config.appId + ' &scope=manage_pages,publish_pages,read_page_mailboxes,pages_show_list,pages_manage_cta,pages_manage_instant_articles&response_type=token&redirect_uri=' + location.origin + location.pathname;
+		}
+
+		if(match = /access_token=([^&]+)/.exec(location.hash)) {
+			var accessToken = match[1];
+			location.hash = '';
+			$.get('/api/setAccessToken?accessToken=' + encodeURIComponent(accessToken), function(data) {
+				console.log(data);
+			})
+	  	}
+
+	  	$('#btn-update').click(update);
+	})
+	
+</script>
+
+<button id="btn-update" class="btn btn-primary">Update Acess Token</button>
+
+</body>
+</html>
