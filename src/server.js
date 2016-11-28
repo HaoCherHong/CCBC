@@ -1,4 +1,6 @@
 var express = require('express'),
+	session = require('express-session'),
+	MongoStore = require('connect-mongo')(session),
 	bodyParser = require('body-parser'),
 	model = require('./model.js'),
 	ccImage = require('./cc-image.js'),
@@ -9,6 +11,16 @@ var express = require('express'),
 var app = express();
 
 app.use(emojiFavicon('cry'));
+
+// Sessions Store
+app.use(session({
+	secret: 'ccbctech',
+	resave: false,
+	saveUninitialized: true,
+	store: new MongoStore({
+		mongooseConnection: model.connection
+	})
+}));
 
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({
@@ -55,7 +67,6 @@ var exchangeAccessTokenFromCode = async(code, redirectUri) => {
 
 var checkIsAdmin = async(accessToken, next) => {
 	var uri = next || 'https://graph.facebook.com/me/accounts?access_token=' + encodeURIComponent(accessToken) + '&fields=accounts{app_id}&limit=1';
-	console.log(uri);
 	var accounts = await rp({
 		uri: uri,
 		json: true
@@ -79,29 +90,14 @@ var checkIsAdmin = async(accessToken, next) => {
 }
 
 var exchangeToken = async(shortLivedToken) => {
-	try {
-		var longLivedToken = await rp('https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=' + config.appId + '&client_secret=' + config.appSecret + '&fb_exchange_token=' + encodeURIComponent(shortLivedToken));
+	var longLivedToken = await rp('https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=' + config.appId + '&client_secret=' + config.appSecret + '&fb_exchange_token=' + encodeURIComponent(shortLivedToken));
 		longLivedToken = /access_token=(.+)/.exec(longLivedToken)[1];
-	} catch (err) {
-		if (err.response)
-			throw err.response;
-		else
-			throw err;
-	}
-
 	return longLivedToken;
 }
 
 var updatePageToken = async() => {
 	console.log('Updating page token...');
-	try {
-		var pageAccessToken = await rp('https://graph.facebook.com/' + config.pageId + '?fields=access_token&access_token=' + config.longLivedToken);
-	} catch (err) {
-		if (err.response)
-			throw err.response;
-		else
-			throw err;
-	}
+	var pageAccessToken = await rp('https://graph.facebook.com/' + config.pageId + '?fields=access_token&access_token=' + config.longLivedToken);
 	console.log('pageAccessToken: ' + pageAccessToken);
 	pageAccessToken = JSON.parse(pageAccessToken)['access_token'];
 	config.pageToken = pageAccessToken;
@@ -110,19 +106,38 @@ var updatePageToken = async() => {
 };
 
 app.get(/^\/manage(\.html)?/, async(req, res, next) => {
-	var redirectUri = req.protocol + '://' + req.get('host') + req.originalUrl;
+
+	//Logout using query string
+	if(req.query.logout || req.query.logout != undefined) {
+		req.session.isAdmin = false;
+		res.redirect('/');
+	}
+
+	//Skip validation when isAdmin = true stored in session
+	if(req.session.isAdmin)
+		return next();
+
+	console.log(req.originalUrl);
+	var currentUri = req.protocol + '://' + req.get('host') + req.originalUrl;
+
+	//Redirect to facebook login page if code not provided
 	if (req.query.code == undefined) {
-		//Redirect to facebook login page
 		var url = 'https://www.facebook.com/v2.8/dialog/oauth?scope=manage_pages,publish_pages,read_page_mailboxes,pages_show_list,pages_manage_cta,pages_manage_instant_articles&response_type=code&client_id=' + config.appId +
-			'&redirect_uri=' + encodeURIComponent(redirectUri);
+			'&redirect_uri=' + encodeURIComponent(currentUri);
 		return res.redirect(url);
 	}
+
+	//Authenticate user
 	try {
-		var accessToken = await exchangeAccessTokenFromCode(req.query.code, redirectUri);
+		console.log('Authenticating user...');
+		var accessToken = await exchangeAccessTokenFromCode(req.query.code, currentUri);
 		var isAdmin = await checkIsAdmin(accessToken);
 		if (!isAdmin)
 			throw 'user is not admin of this page';
-		next();
+
+		req.session.isAdmin = true;
+		console.log('redirecting to ' + req.path);
+		res.redirect(req.path);
 	} catch (err) {
 		res.redirect('/');
 	}
