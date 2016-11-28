@@ -48,6 +48,7 @@ var getCCImage = function(text, options) {
 			padding = options.padding || 20,
 			fontSize = options.width || 30,
 			watermarkHeight = options.watermarkHeight || 30,
+			watermarkPadding = options.watermarkPadding || 5,
 			font = options.font || 'Microsoft JhengHei',
 			fontColor = options.fontColor || '#ffffff',
 			backgroundColor = options.backgroundColor || '#000000';
@@ -58,7 +59,7 @@ var getCCImage = function(text, options) {
 		ctx.font = fontSize + 'px ' + '"' + font + '"';
 
 		var lines = getLines(ctx, text, width - padding * 2),
-			height = lines.length * fontSize + padding * 2 + watermarkHeight;
+			height = lines.length * fontSize + padding * 2 + watermarkPadding + watermarkHeight;
 
 		//Start drawing
 		canvas = new Canvas(width, height);
@@ -83,7 +84,7 @@ var getCCImage = function(text, options) {
 		var watermarkHeight = watermarkHeight,
 			watermarkWidth = watermark.width / watermark.height * watermarkHeight;
 
-		ctx.drawImage(watermark, width - padding - watermarkWidth, height - padding - watermarkHeight, watermarkWidth, watermarkHeight);
+		ctx.drawImage(watermark, width - padding - watermarkWidth, height - padding - watermarkHeight + watermarkPadding, watermarkWidth, watermarkHeight);
 
 		if(options.stream) {
 			resolve(canvas.pngStream());
