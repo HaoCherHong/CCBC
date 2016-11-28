@@ -34,8 +34,6 @@ var serverTask = function(options) {
 }
 
 var copyTask = function (options) {
-	var start = new Date();
-
 	gulp.src(options.src, options)
 		.pipe(gulp.dest(options.dest))
 		.pipe(notify(function(file) {
@@ -52,7 +50,7 @@ gulp.task('default', function() {
 	})
 
 	copyTask({
-		src: ['./src/watermark.png', './src/public/*.*'],
+		src: ['./src/watermark.png', './src/config.json', './src/public/*.*'],
 		base: './src/',
 		dest: './build'
 	});
@@ -68,7 +66,7 @@ gulp.task('watch', function() {
 	})
 
 	copyTask({
-		src: ['./src/watermark.png', './src/public/*.*'],
+		src: ['./src/watermark.png', './src/config.json', './src/public/*.*'],
 		base: './src/',
 		dest: './build'
 	});
