@@ -33,7 +33,11 @@ class Manage extends React.Component {
 		$.post('/api/manage/posts/' + post._id + '/block', (result) => {
 			console.log(result);
 			if(result.success) {
-				reload();
+				var index = this.state.posts.indexOf(post);
+				this.state.posts.splice(index, 1, result.post);
+				this.setState({
+					posts: this.state.posts
+				});
 			} else {
 
 			}

@@ -129,7 +129,7 @@ app.get('/posts', async(req, res, next)=> {
 		if(req.query[fields[f]] != undefined)
 			criteria[fields[f]] = req.query[fields[f]];
 
-	var posts = await model.Post.find(criteria);
+	var posts = await model.Post.find(criteria).sort({serialNumber: 1});
 
 	res.send(posts);
 });
@@ -152,7 +152,8 @@ app.post('/posts/:postId/block', async(req, res, next) => {
 	await post.save();
 
 	res.send({
-		success: true
+		success: true,
+		post: post
 	});
 })
 
