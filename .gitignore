@@ -1,5 +1,5 @@
 node_modules/
 resources/
 build/
-src/config.json
-src/public/config.js
+src/server/config.json
+src/server/public/config.js
