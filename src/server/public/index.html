@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>哭哭北科 </title>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+		<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+		<script src="/config.js"></script>
+	</head>
+	<body>
+
+		<div class="container">
+			<div class="jumbotron">
+				<h1>哭哭北科 <small>beta</small></h1>
+				<p>自由地哭哭，完全匿名。</p>
+				<p><a id="link-page" class="btn btn-primary btn-lg" href="" target="_blank" role="button">粉絲專頁</a></p>
+			</div>
+
+			<h2>我要哭哭</h2>
+			<div id="info-success" class="alert alert-success" role="alert"></div>
+			<div id="info-error" class="alert alert-danger" role="alert"></div>
+			<div id="info-queue" class="alert alert-info" role="alert"></div>
+			<form>
+				<label class="radio-inline">
+					<input type="radio" name="mode" value="text" checked> 純文字
+				</label>
+				<label class="radio-inline">
+					<input type="radio" name="mode" value="ccImage"> 哭哭文字圖
+				</label>
+
+				<textarea id="message" name="message" class="form-control" rows="3" placeholder="至少10個字"></textarea>
+				<center><img id="cc-image-preview"></center>
+				<button type="submit" class="btn btn-primary btn-block" disabled>哭哭 😢</button>
+			</form>
+		</div>
+
+	    <script>
+	      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+	      ga('create', 'UA-61516445-9', 'auto');
+	      ga('send', 'pageview');
+	    </script>
+
+	    <script type="text/javascript">
+
+	    	$('#link-page').attr('href', 'https://www.facebook.com/' + config.pageId + '/');
+
+			$('#info-success, #info-error').hide();
+
+			$('#cc-image-preview').hide();
+
+			$('#message').on('keyup', function(e) {
+				$('button:submit').prop('disabled', e.target.value.length < 10);
+				if($('input:radio:checked[name=mode]').val() == 'ccImage') {
+					updateCCPreview();
+				}
+			});
+
+			$('input:radio[name=mode]').change(function(e){
+				$('#cc-image-preview').toggle(e.target.value == 'ccImage');
+				if(e.target.value == 'ccImage') {
+					updateCCPreview();
+				}
+		    });
+
+			$('form').submit(function(e) {
+				e.preventDefault();
+
+				$('button:submit').prop('disabled', true);
+				$('#message').prop('readonly', true);
+
+
+				$.post('/api/cc', $(this).serialize(), function(data) {
+					ga('send', 'event', 'cry', 'cry');
+					if(data.success) {
+						$('#info-success').text('哭哭成功，請等待粉絲專頁發文').slideDown();
+						$('form').slideUp();
+						$('#info-error').hide();
+						updateQueueNumber();
+					} else {
+						$('#info-error').text(data.message).slideDown();
+						$('button:submit').prop('disabled', false);
+						$('#message').prop('readonly', false);
+
+						if(data.errorCode == 500000) {
+							if(data.samePost.postId != undefined) {
+								setTimeout(function() {
+									window.location = 'https://www.facebook.com/permalink.php?story_fbid=' + data.samePost.postId + '&id=' + config.pageId;
+								}, 1500);
+							}
+						}
+					}
+					
+				});
+			})
+
+			var updateCCPreview = function() {
+				var message = $('#message').val() || '哭哭預覽圖';
+				$('#cc-image-preview').attr('src', '/api/ccImage/' + encodeURIComponent(message));
+			}
+
+			var updateQueueNumber = function() {
+				$.get('/api/queueNumber', function(queueNumber) {
+					if(queueNumber > 0)
+						$('#info-queue').text('目前有' + queueNumber + '個同學排隊要哭哭');
+					else
+						$('#info-queue').text('同學們現在都笑笑的');
+				})
+			}
+			setInterval(updateQueueNumber, 10000);
+			updateQueueNumber();
+		</script>
+	</body>
+</html>
