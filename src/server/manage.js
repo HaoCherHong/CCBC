@@ -1,6 +1,7 @@
 var express = require('express'),
 	model = require('./model.js'),
-	config = require('./config.js')();
+	config = require('./config.js')(),
+	rp = require('request-promise');
 
 var app = express();
 
