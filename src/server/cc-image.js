@@ -10,17 +10,16 @@ const getLines = (ctx, text, maxWidth) => {
 
 	for (var i = 1; i < text.length; i++) {
 		var char = text[i];
-		var width = ctx.measureText(currentLine + ' ' + char).width;
+		var width = ctx.measureText(currentLine + char).width;
 		if (width < maxWidth && char != '\n') {
 			currentLine += char;
 		} else {
 			lines.push(currentLine);
-			currentLine = '';
-			if(lines.length == maxLineNumber)
-				break;
+			currentLine = char;
 		}
 	}
 	lines.push(currentLine);
+	lines = lines.splice(0, maxLineNumber);
 	return lines;
 }
 
