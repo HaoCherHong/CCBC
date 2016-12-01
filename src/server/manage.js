@@ -35,8 +35,7 @@ app.handleManageRequest = async(req, res, next) => {
 			throw 'user is not admin of this page';
 
 		req.session.isAdmin = true;
-		console.log('redirecting to ' + req.path);
-		res.redirect(req.path);
+		next();
 	} catch (err) {
 		res.redirect('/');
 	}
@@ -98,16 +97,18 @@ app.use((req, res, next) => {
 	next();
 });
 
-app.get('/setAccessToken', async(req, res, next) => {
-	if (req.query.accessToken == undefined)
+app.get('/updatePageToken', async(req, res, next) => {
+	if (req.query.code == undefined)
 		return next('accessToken required');
 
 	try {
-		var isAdmin = await checkIsAdmin(req.query.accessToken);
+		var redirectUri = req.query.redirectUri;
+		var accessToken = await exchangeAccessTokenFromCode(req.query.code, redirectUri);
+		var isAdmin = await checkIsAdmin(accessToken);
 		if (!isAdmin)
 			return res.status(403).send('forbidden');
 
-		var longLivedToken = await exchangeToken(req.query.accessToken);
+		var longLivedToken = await exchangeToken(accessToken);
 		console.log(longLivedToken);
 		config.longLivedToken = longLivedToken;
 		config.save();
@@ -116,6 +117,7 @@ app.get('/setAccessToken', async(req, res, next) => {
 		});
 		updatePageToken();
 	} catch (err) {
+		console.error(err);
 		next(err);
 	}
 })
@@ -148,6 +150,28 @@ app.post('/posts/:postId/block', async(req, res, next) => {
 
 	post.failed = true;
 	post.error = "Blocked by admin at " + (new Date()).toString();
+
+	await post.save();
+
+	res.send({
+		success: true,
+		post: post
+	});
+})
+
+app.post('/posts/:postId/retry', async(req, res, next) => {
+
+	var post = await model.Post.findById(req.params.postId);
+
+	if(post.published || !post.failed) {
+		return res.send({
+			success: false,
+			message: 'post is not failed or is published'
+		});
+	}
+
+	post.failed = false;
+	post.error = null;
 
 	await post.save();
 
