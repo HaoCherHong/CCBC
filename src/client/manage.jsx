@@ -1,11 +1,8 @@
 var React = require('react')
-	ReactDom = require('react-dom');
+	ReactDom = require('react-dom'),
+	config = require('./config.js');
 
 global.jQuery = global.$ = require("jquery");
-
-var config = {
-	appId: 1436161303080539
-};
 
 window.React = React;
 

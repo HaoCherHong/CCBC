@@ -3,3 +3,4 @@ resources/
 build/
 src/server/config.json
 src/server/public/config.js
+src/client/config.js
