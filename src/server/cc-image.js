@@ -6,6 +6,7 @@ var maxLineNumber = 15;
 
 const getLines = (ctx, text, maxWidth) => {
 	var lines = [];
+	text = text.trim();
 	var currentLine = text[0];
 
 	for (var i = 1; i < text.length; i++) {
@@ -15,7 +16,7 @@ const getLines = (ctx, text, maxWidth) => {
 			currentLine += char;
 		} else {
 			lines.push(currentLine);
-			currentLine = char;
+			currentLine = char != '\n' ? char : '';
 		}
 	}
 	lines.push(currentLine);
