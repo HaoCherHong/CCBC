@@ -24,9 +24,9 @@ const getLines = (ctx, text, maxWidth) => {
 	return lines;
 }
 
-const getWatermark = async() => {
+const getWatermark = async(id) => {
 	return new Promise((resolve, reject) => {
-		fs.readFile(__dirname + '/watermark.png', function(err, watermark) {
+		fs.readFile(__dirname + '/watermarks/watermark_' + id + '.png', function(err, watermark) {
 			if (err)
 				return reject(err);
 
@@ -51,7 +51,8 @@ var getCCImage = function(text, options) {
 			watermarkPadding = options.watermarkPadding || 5,
 			font = options.font || 'Microsoft JhengHei',
 			fontColor = options.fontColor || '#ffffff',
-			backgroundColor = options.backgroundColor || '#000000';
+			backgroundColor = options.backgroundColor || '#000000',
+			watermarkId = options.watermarkId || 'default';
 
 		//Mesure texts and split lines
 		var canvas = new Canvas(0, 0),
@@ -79,7 +80,7 @@ var getCCImage = function(text, options) {
 		}
 
 		//Draw watermark
-		var watermark = await getWatermark();
+		var watermark = await getWatermark(watermarkId);
 
 		var watermarkHeight = watermarkHeight,
 			watermarkWidth = watermark.width / watermark.height * watermarkHeight;

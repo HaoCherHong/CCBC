@@ -19,9 +19,17 @@ var publish = async (post) => {
 	if(post.mode == 'ccImage') {
 		//Post CC-Image
 		var uri = 'https://graph.facebook.com/' + config.pageId + '/photos?access_token=' + config.pageToken + '&caption=' + encodeURIComponent(publishMessage);
-		var img = await ccImage(post.message, {
+
+		//Generate CC-Image
+		var options = {
 			stream: false
-		});
+		};
+		if(post.ccImageOptions)
+			for(var i in post.ccImageOptions)
+				options[i] = post.ccImageOptions[i];
+		var img = await ccImage(post.message, options);
+
+		//Prepare form-data
 		var formData = {
 			source: {
 				value: img.buffer,
@@ -89,8 +97,8 @@ var sleep = function(time) {
 var update = async function () {
 	var nextPost = await model.Post.findOne({published: false, failed: false}).sort({serialNumber: 1});
 	if(nextPost != null) {
-		console.log('trying to post ' + nextPost + '...');
 		if(config.lastPostTime == undefined || ((new Date()).getTime() - config.lastPostTime.getTime() >= config.ccInterval))  {
+			console.log('trying to post ' + nextPost + '...');
 			try {
 				var res = await publish(nextPost);
 				console.log(res);

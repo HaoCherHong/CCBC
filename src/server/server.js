@@ -51,7 +51,8 @@ var newPost = async(params) => {
 		serialNumber: serialNumber,
 		submitTime: new Date(),
 		message: params.message,
-		mode: params.mode
+		mode: params.mode,
+		ccImageOptions: params.ccImageOptions
 	});
 
 	return doc;
@@ -63,7 +64,14 @@ app.use(express.static('public'));
 
 app.get('/api/ccImage/:text', async(req, res, next) => {
 	try {
-		var img = await ccImage(req.params.text);
+		var options;
+		if (req.query.style == 'facebook')
+			options = {
+				fontColor: '#3b5998',
+				backgroundColor: '#ffffff',
+				watermarkId: 'facebook'
+			};
+		var img = await ccImage(req.params.text, options);
 
 		res.writeHead(200, {
 			'Content-Type': 'image/png',
@@ -85,12 +93,18 @@ app.get('/api/queueNumber', async(req, res, next) => {
 
 app.post('/api/cc', async(req, res, next) => {
 	if (req.body.message == undefined)
-		return next('message required');
+		return next({
+			message: 'message required'
+		});
 	if (req.body.mode == undefined)
-		return next('mode required');
+		return next({
+			message: 'mode required'
+		});
 
 	if (req.body.message.length < 10)
-		return next('message is too short');
+		return next({
+			message: 'message is too short'
+		});
 
 	try {
 		//Check if post with same message exists
@@ -111,10 +125,21 @@ app.post('/api/cc', async(req, res, next) => {
 			});
 		}
 
+		
+		//Prepare CCImage Options
+		var ccImageOptions;
+		if (req.body.ccImageStyle == 'facebook')
+			ccImageOptions = {
+				fontColor: '#3b5998',
+				backgroundColor: '#ffffff',
+				watermarkId: 'facebook'
+			};
+
 		//Create a new post
 		var doc = await newPost({
 			message: req.body.message,
-			mode: req.body.mode
+			mode: req.body.mode,
+			ccImageOptions: ccImageOptions
 		});
 
 		res.json({
@@ -129,10 +154,15 @@ app.post('/api/cc', async(req, res, next) => {
 app.use('/api/manage', manage);
 
 app.use((err, req, res, next) => {
-	if (err.response)
-		err = err.response.body;
+	if(err.status)
+		res.status(err.status);
+
+	res.json({
+		success: false,
+		message: err.message
+	});
+
 	console.error(err);
-	res.send(err);
 })
 
 var main = async() => {

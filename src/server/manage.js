@@ -7,10 +7,10 @@ var app = express();
 
 app.handleManageRequest = async(req, res, next) => {
 	//Logout using query string
-	if (req.query.logout || req.query.logout != undefined) {
-		req.session.isAdmin = false;
-		res.redirect('/');
-	}
+	// if (req.query.logout || req.query.logout != undefined) {
+	// 	req.session.isAdmin = false;
+	// 	res.redirect('/');
+	// }
 
 	//Skip validation when isAdmin = true stored in session
 	if (req.session.isAdmin)
@@ -92,21 +92,29 @@ var updatePageToken = async() => {
 
 
 app.use((req, res, next) => {
-	if(!req.session.isAdmin)
-		return res.status(403).send('forbidden');
+	if (!req.session.isAdmin)
+		return next({
+			status: 403,
+			message: 'forbidden'
+		});
 	next();
 });
 
-app.get('/updatePageToken', async(req, res, next) => {
-	if (req.query.code == undefined)
-		return next('accessToken required');
+app.post('/updatePageToken', async(req, res, next) => {
+	if (req.body.code == undefined)
+		return next({
+			message: 'accessToken required'
+		});
 
 	try {
-		var redirectUri = req.query.redirectUri;
-		var accessToken = await exchangeAccessTokenFromCode(req.query.code, redirectUri);
+		var redirectUri = req.body.redirectUri;
+		var accessToken = await exchangeAccessTokenFromCode(req.body.code, redirectUri);
 		var isAdmin = await checkIsAdmin(accessToken);
 		if (!isAdmin)
-			return res.status(403).send('forbidden');
+			return next({
+				status: 403,
+				message: 'forbidden'
+			});
 
 		var longLivedToken = await exchangeToken(accessToken);
 		console.log(longLivedToken);
@@ -122,16 +130,18 @@ app.get('/updatePageToken', async(req, res, next) => {
 	}
 })
 
-app.get('/posts', async(req, res, next)=> {
+app.get('/posts', async(req, res, next) => {
 	var fields = ['published', 'failed'];
 
 	var criteria = {}
 
-	for(let f in fields)
-		if(req.query[fields[f]] != undefined)
+	for (let f in fields)
+		if (req.query[fields[f]] != undefined)
 			criteria[fields[f]] = req.query[fields[f]];
 
-	var posts = await model.Post.find(criteria).sort({serialNumber: 1});
+	var posts = await model.Post.find(criteria).sort({
+		serialNumber: 1
+	});
 
 	res.send(posts);
 });
@@ -140,7 +150,7 @@ app.post('/posts/:postId/block', async(req, res, next) => {
 
 	var post = await model.Post.findById(req.params.postId);
 
-	if(post.published) {
+	if (post.published) {
 		return res.send({
 			success: false,
 			postId: postId,
@@ -163,7 +173,7 @@ app.post('/posts/:postId/retry', async(req, res, next) => {
 
 	var post = await model.Post.findById(req.params.postId);
 
-	if(post.published || !post.failed) {
+	if (post.published || !post.failed) {
 		return res.send({
 			success: false,
 			message: 'post is not failed or is published'
