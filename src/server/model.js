@@ -41,6 +41,7 @@ var postSchema = new mongoose.Schema({
 		required: true,
 		enum: ['text', 'ccImage']
 	},
+	attachImage: mongoose.Schema.Types.Mixed,
 	ccImageOptions: mongoose.Schema.Types.Mixed,
 	publishedMessage: String,
 	submitTime: {

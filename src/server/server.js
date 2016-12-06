@@ -4,12 +4,27 @@ var express = require('express'),
 	bodyParser = require('body-parser'),
 	model = require('./model.js'),
 	ccImage = require('./cc-image.js'),
+	attachImage = require('./attach-image.js'),
 	config = require('./config.js')(),
 	rp = require('request-promise'),
 	emojiFavicon = require('emoji-favicon'),
-	manage = require('./manage.js');
+	manage = require('./manage.js'),
+	multer = require('multer');
 
 var app = express();
+
+var fileFilter = (req, file, cb) => {
+		cb(null, /image\/(jpeg|png)/.test(file.mimetype));
+	},
+	previewUpload = multer({
+		storage: multer.memoryStorage(),
+		fileFilter: fileFilter
+	}),
+	upload = multer({
+		dest: 'uploads/',
+		fileFilter: fileFilter
+	});
+
 
 app.use(emojiFavicon('cry'));
 
@@ -52,6 +67,7 @@ var newPost = async(params) => {
 		submitTime: new Date(),
 		message: params.message,
 		mode: params.mode,
+		attachImage: params.attachImage,
 		ccImageOptions: params.ccImageOptions
 	});
 
@@ -91,7 +107,7 @@ app.get('/api/queueNumber', async(req, res, next) => {
 	res.json(count);
 })
 
-app.post('/api/cc', async(req, res, next) => {
+app.post('/api/cc', upload.single('attachImage'), async(req, res, next) => {
 	if (req.body.message == undefined)
 		return next({
 			message: 'message required'
@@ -125,22 +141,28 @@ app.post('/api/cc', async(req, res, next) => {
 			});
 		}
 
-		
-		//Prepare CCImage Options
-		var ccImageOptions;
-		if (req.body.ccImageStyle == 'facebook')
-			ccImageOptions = {
-				fontColor: '#3b5998',
-				backgroundColor: '#ffffff',
-				watermarkId: 'facebook'
-			};
+
+		var options = {
+			message: req.body.message,
+			mode: req.body.mode
+		};
+
+		if (options.mode == 'text') {
+			options.attachImage = req.file;
+		} else if (options.mode == 'ccImage') {
+			//Prepare CCImage Options
+			if (req.body.ccImageStyle == 'facebook')
+				options.ccImageOptions = {
+					fontColor: '#3b5998',
+					backgroundColor: '#ffffff',
+					watermarkId: 'facebook'
+				};
+		}
+
+
 
 		//Create a new post
-		var doc = await newPost({
-			message: req.body.message,
-			mode: req.body.mode,
-			ccImageOptions: ccImageOptions
-		});
+		var doc = await newPost(options);
 
 		res.json({
 			success: true
@@ -151,11 +173,20 @@ app.post('/api/cc', async(req, res, next) => {
 	}
 })
 
+app.post('/api/previewAttachImage', previewUpload.single('image'), async(req, res, next) => {
+	if (!req.file)
+		return next({
+			message: 'image required'
+		});
+	var previewDataUrl = await attachImage(req.file.buffer);
+	res.send(previewDataUrl);
+})
+
 app.use('/api/manage', manage);
 
 app.use((err, req, res, next) => {
-	if(err.status)
-		res.status(err.status);
+
+	res.status(err.status || 400);
 
 	res.json({
 		success: false,

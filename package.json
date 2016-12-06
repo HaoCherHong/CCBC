@@ -32,6 +32,7 @@
     "jQuery": "^1.7.4",
     "jquery": "^3.1.1",
     "mongoose": "^4.6.8",
+    "multer": "^1.2.0",
     "react": "^15.4.1",
     "react-dom": "^15.4.1",
     "request": "^2.79.0",

@@ -10,6 +10,17 @@ const getPreviewImageUrl = (app) => (
 	'/api/ccImage/' + encodeURIComponent(app.state.form.message || '哭哭預覽圖') + (app.state.form.ccImageStyle == 'facebook' ? '?style=facebook' : '')
 )
 
+const checkStatus = (response) => {
+	if (response.status >= 200 && response.status < 300) {
+		console.log(response.status);
+		return response;
+	} else {
+		var error = new Error(response.statusText);
+		error.response = response;
+		throw error;
+	}
+}
+
 class App extends React.Component {
 	constructor(props) {
 		super(props);
@@ -27,10 +38,49 @@ class App extends React.Component {
 		this.onFormUpdate = this.onFormUpdate.bind(this);
 		this.onFormSubmit = this.onFormSubmit.bind(this);
 		this.updateQueueNumber = this.updateQueueNumber.bind(this);
+		this.deleteAttacheImage = this.deleteAttacheImage.bind(this);
+		this.validateAndPreviewAttachImage = this.validateAndPreviewAttachImage.bind(this);
+	}
+
+	deleteAttacheImage(e) {
+		this.state.form.attachImage = null;
+		this.setState({
+			form: this.state.form
+		});
+	}
+
+	validateAndPreviewAttachImage(files) {
+		if(files.length == 0) {
+			this.setState({
+				previewDataUrl: null
+			});
+			return;
+		}
+
+		var file = files[0];
+		var data = new FormData();
+		data.append('image', file);
+
+		fetch('/api/previewAttachImage', {
+			method: 'POST',
+			body: data
+		}).then(checkStatus)
+		.then((response) => (
+			response.text()
+		)).then((result) => {
+			this.state.form.attachImage = file;
+			this.setState({
+				previewDataUrl: result
+			});
+		}).catch(console.error);
 	}
 
 	onFormUpdate(e) {
-		this.state.form[e.target.name] = e.target.value;
+		if(e.target.type == 'file') {
+			this.validateAndPreviewAttachImage(e.target.files);
+		} else {
+			this.state.form[e.target.name] = e.target.value;
+		}
 		this.setState({
 			form: this.state.form
 		});
@@ -44,13 +94,15 @@ class App extends React.Component {
 			status: 'action'
 		});
 
+		//Prepare body
+		var data = new FormData();
+		for(var i in this.state.form)
+			data.append(i, this.state.form[i]);
+
 		//Send AJAX Request
 		fetch('/api/cc', {
 			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(this.state.form)
+			body: data
 		}).then((response) => (	//Parse response to json
 			response.json()
 		)).then((result) => {
@@ -146,7 +198,7 @@ class App extends React.Component {
 					this.state.status != 'posted' && (
 						<form onSubmit={this.onFormSubmit}>
 							<label className="radio-inline">
-								<input type="radio" name="mode" value="text" checked={this.state.form.mode == 'text'} onChange={this.onFormUpdate}/> 純文字
+								<input type="radio" name="mode" value="text" checked={this.state.form.mode == 'text'} onChange={this.onFormUpdate}/> 純文字 / 上傳圖片
 							</label>
 							<label className="radio-inline">
 								<input type="radio" name="mode" value="ccImage" checked={this.state.form.mode == 'ccImage'} onChange={this.onFormUpdate}/> 哭哭文字圖
@@ -163,7 +215,30 @@ class App extends React.Component {
 
 							<textarea id="message" name="message" className="form-control" rows="3" placeholder="至少10個字" value={this.state.form.message} onChange={this.onFormUpdate}></textarea>
 							{
-								this.state.form.mode == 'ccImage' && <center><img alt="哭哭預覽圖" src={getPreviewImageUrl(this)}/></center>
+								this.state.form.mode == 'text' ? (
+									<div>
+										<label className="btn btn-default btn-block">
+											附加圖片
+											<input type="file" name="attachImage" className="hidden" accept="image/*" onChange={this.onFormUpdate}/>
+										</label>
+										{
+											this.state.form.attachImage && (
+												<button type="button" className="btn btn-danger btn-block" onClick={this.deleteAttacheImage}>刪除圖片</button>
+											)
+										}
+										{
+											this.state.form.attachImage && this.state.previewDataUrl && (
+												<div className="row">
+													<div className="text-center row col-md-6 col-md-off col-md-offset-3 col-sm-12">
+														<img style={{maxWidth:'100%'}} alt="上傳預覽圖" src={this.state.previewDataUrl}/>
+													</div>
+												</div>
+											)
+										}
+									</div>
+								) : (
+									<center><img alt="哭哭預覽圖" src={getPreviewImageUrl(this)}/></center>
+								)
 							}
 							<button type="submit" className="btn btn-primary btn-block" disabled={this.state.form.message.length < 10 || this.state.status != 'idle'}>哭哭 😢</button>
 						</form>
