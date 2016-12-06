@@ -28,7 +28,9 @@ var serverTask = function(options) {
 
 	if (options.watch) {
 		watch(options.src, function(file) {
-			var _options = options;
+			var _options = {};
+			for(var i in options)
+				_options[i] = options[i];
 			_options.src = file.path;
 			rebuild(_options);
 		});
@@ -38,11 +40,25 @@ var serverTask = function(options) {
 }
 
 var copyTask = function(options) {
-	gulp.src(options.src, options)
-		.pipe(gulp.dest(options.dest))
-		.pipe(notify(function(file) {
-			console.log(file.relative + ' copied');
-		}));
+	var copy = function(options) {
+		gulp.src(options.src, options)
+			.pipe(gulp.dest(options.dest))
+			.pipe(notify(function(file) {
+				console.log(file.relative + ' copied');
+			}));
+	}
+
+	if(options.watch) {
+		watch(options.src, function(file) {
+			var _options = {};
+			for(var i in options)
+				_options[i] = options[i];
+			_options.src = file.path;
+			copy(_options);
+		})
+	}
+
+	copy(options);
 }
 
 // Starts our development workflow
@@ -87,6 +103,7 @@ gulp.task('watch', function() {
 	})
 
 	copyTask({
+		watch: true,
 		src: ['./src/server/watermarks/*.*', './src/server/config.json', './src/server/public/*.*'],
 		base: './src/server',
 		dest: './build'
