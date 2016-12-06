@@ -131,7 +131,7 @@ app.post('/updatePageToken', async(req, res, next) => {
 })
 
 app.get('/posts', async(req, res, next) => {
-	var fields = ['published', 'failed'];
+	var fields = ['published', 'failed', 'approved'];
 
 	var criteria = {}
 
@@ -182,6 +182,27 @@ app.post('/posts/:postId/retry', async(req, res, next) => {
 
 	post.failed = false;
 	post.error = null;
+
+	await post.save();
+
+	res.send({
+		success: true,
+		post: post
+	});
+})
+
+app.post('/posts/:postId/approve', async(req, res, next) => {
+
+	var post = await model.Post.findById(req.params.postId);
+
+	if (post.approved) {
+		return res.status(400).send({
+			success: false,
+			message: 'post is already approved'
+		});
+	}
+
+	post.approved = true;
 
 	await post.save();
 

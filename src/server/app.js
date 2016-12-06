@@ -113,7 +113,8 @@ var sleep = function(time) {
 var update = async function() {
 	var nextPost = await model.Post.findOne({
 		published: false,
-		failed: false
+		failed: false,
+		approved: true
 	}).sort({
 		serialNumber: 1
 	});

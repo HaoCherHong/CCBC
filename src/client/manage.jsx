@@ -18,6 +18,7 @@ class Manage extends React.Component {
 		this.onSwitchTab = this.onSwitchTab.bind(this);
 		this.block = this.block.bind(this);
 		this.retry = this.retry.bind(this);
+		this.approve = this.approve.bind(this);
 		this.updatePageToken = this.updatePageToken.bind(this);
 	}
 
@@ -29,10 +30,12 @@ class Manage extends React.Component {
 		var url = '/api/manage/posts';
 		switch(tab) {
 			case 'posted':
-				url += '?published=true'
+				url += '?published=true';
 				break;
 			case 'failed':
-				url += '?failed=true'
+				url += '?failed=true';
+			case 'approve':
+				url += '?approved=false';
 				break;
 		}
 		fetch(url, {
@@ -104,6 +107,26 @@ class Manage extends React.Component {
 		});
 	}
 
+	approve(post) {
+		fetch('/api/manage/posts/' + post._id + '/approve', {
+			method: 'POST',
+			credentials: 'same-origin'
+		}).then((response) => (
+			response.json()
+		)).then((result) => {
+			console.log(result);
+			if(result.success) {
+				var index = this.state.posts.indexOf(post);
+				this.state.posts.splice(index, 1, result.post);
+				this.setState({
+					posts: this.state.posts
+				});
+			} else {
+
+			}
+		});
+	}
+
 	updatePageToken() {
 		var code = this.getAccessTokenCode(),
 			redirectUri = location.origin + location.pathname;
@@ -150,6 +173,7 @@ class Manage extends React.Component {
 						<li role="presentation" className={ this.state.tab == 'all' ? 'active' : ''}><a href="#" data-tab="all" onClick={this.onSwitchTab}>All</a></li>
 						<li role="presentation" className={ this.state.tab == 'posted' ? 'active' : ''}><a href="#" data-tab="posted" onClick={this.onSwitchTab}>Posted</a></li>
 						<li role="presentation" className={ this.state.tab == 'failed' ? 'active' : ''}><a href="#" data-tab="failed" onClick={this.onSwitchTab}>Failed</a></li>
+						<li role="presentation" className={ this.state.tab == 'approve' ? 'active' : ''}><a href="#" data-tab="approve" onClick={this.onSwitchTab}>Approve</a></li>
 					</ul>
 
 					<table className="table table-hover">
@@ -174,7 +198,9 @@ class Manage extends React.Component {
 											if(post.published)
 												return null;
 
-											if(post.failed)
+											if(!post.approved)
+												return  (<button className="btn btn-primary" onClick={this.approve.bind(null, post)}>Approve</button>)
+											else if(post.failed)
 												return  (<button className="btn btn-default" onClick={this.retry.bind(null, post)}>Retry</button>)
 											else
 												return  (<button className="btn btn-danger" onClick={this.block.bind(null, post)}>Block</button>)

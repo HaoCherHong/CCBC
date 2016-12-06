@@ -40,6 +40,10 @@ var postSchema = new mongoose.Schema({
 		type: String,
 		required: true,
 		enum: ['text', 'ccImage']
+	}, 
+	approved: {
+		type: Boolean,
+		required: true
 	},
 	attachImage: mongoose.Schema.Types.Mixed,
 	ccImageOptions: mongoose.Schema.Types.Mixed,

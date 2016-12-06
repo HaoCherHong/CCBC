@@ -62,14 +62,20 @@ var newPost = async(params) => {
 
 	console.log(serialNumber + ': ' + params.message + '(' + params.mode + ')');
 
-	var doc = await model.Post.create({
+	var options = {
 		serialNumber: serialNumber,
 		submitTime: new Date(),
 		message: params.message,
 		mode: params.mode,
 		attachImage: params.attachImage,
-		ccImageOptions: params.ccImageOptions
-	});
+		ccImageOptions: params.ccImageOptions,
+		approved: true
+	};
+
+	if(options.attachImage)
+		options.approved = false;
+
+	var doc = await model.Post.create(options);
 
 	return doc;
 }

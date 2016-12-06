@@ -217,13 +217,16 @@ class App extends React.Component {
 							{
 								this.state.form.mode == 'text' ? (
 									<div>
-										<label className="btn btn-default btn-block">
-											附加圖片
-											<input type="file" name="attachImage" className="hidden" accept="image/*" onChange={this.onFormUpdate}/>
-										</label>
 										{
-											this.state.form.attachImage && (
-												<button type="button" className="btn btn-danger btn-block" onClick={this.deleteAttacheImage}>刪除圖片</button>
+											this.state.form.attachImage ? (
+												<div className="alert alert-info text-center" role="alert">
+													注意，附加圖片需等待人工審核
+												</div>
+											) : (
+												<label className="btn btn-default btn-block">
+													附加圖片
+													<input type="file" name="attachImage" className="hidden" accept="image/*" onChange={this.onFormUpdate}/>
+												</label>
 											)
 										}
 										{
@@ -238,6 +241,11 @@ class App extends React.Component {
 									</div>
 								) : (
 									<center><img alt="哭哭預覽圖" src={getPreviewImageUrl(this)}/></center>
+								)
+							}
+							{
+								this.state.form.attachImage && (
+									<button type="button" className="btn btn-danger btn-block" onClick={this.deleteAttacheImage}>刪除圖片</button>
 								)
 							}
 							<button type="submit" className="btn btn-primary btn-block" disabled={this.state.form.message.length < 10 || this.state.status != 'idle'}>哭哭 😢</button>
