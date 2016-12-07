@@ -14,7 +14,7 @@ var publish = async(post) => {
 
 	var publishMessage = '#哭哭北科' + post.serialNumber +
 		(post.mode == 'text' ? '\n' + post.message : '') +
-		'\n\n👻匿名回覆: ' + config.replyUrl + '/' + post.serialNumber
+		'\n\n👻匿名回覆: ' + config.replyUrl + '/' + post.serialNumber +
 		'\n🎺 匿名哭哭: ' + config.ccUrl +
 		'\n😢 哭哭時間: ' + timeString(post.submitTime);
 
