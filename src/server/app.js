@@ -63,14 +63,16 @@ var publish = async(post) => {
 			}
 		} else {
 			//Post Plain Text
-			requestOptions.uri = 'https://graph.facebook.com/' + config.pageId + '/feed?access_token=' + config.pageToken + '&message=' + encodeURIComponent(publishMessage) + (link ? '&link=' + encodeURIComponent(link) : '');
 
 			//Check if there is link
 			var linkRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi,
+				link,
 				match;
 
 			if (match = linkRegex.exec(post.message))
-				requestOptions.link = match[0];
+				link = match[0];
+
+			requestOptions.uri = 'https://graph.facebook.com/' + config.pageId + '/feed?access_token=' + config.pageToken + '&message=' + encodeURIComponent(publishMessage) + (link ? '&link=' + encodeURIComponent(link) : '');
 		}
 	} else {
 		throw new Error('unexpected mode');
