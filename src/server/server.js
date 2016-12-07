@@ -113,6 +113,18 @@ app.get('/api/queueNumber', async(req, res, next) => {
 	res.json(count);
 })
 
+app.get('/api/replyCharacters', (req, res, next) => {
+	//copy from config
+	var characters = []
+	for(var i in config.replyCharacters) {
+		characters.push({
+			pageId: config.replyCharacters[i].pageId,
+			name: config.replyCharacters[i].name
+		});
+	}
+	res.json(characters);
+})
+
 app.post('/api/cc', upload.single('attachImage'), async(req, res, next) => {
 	if (req.body.message == undefined)
 		return next({
@@ -178,6 +190,41 @@ app.post('/api/cc', upload.single('attachImage'), async(req, res, next) => {
 	} catch (e) {
 		next(e);
 	}
+})
+
+app.post('/api/reply/:postId', async(req, res, next) => {
+	if(!req.body.message)
+		return next({
+			message: 'message required'
+		});
+	if(!req.body.character)
+		return next({
+			message: 'character required'
+		});
+
+	var characterIndex = config.replyCharacters.map((character)=>(character.pageId)).indexOf(parseInt(req.body.character));
+	if(characterIndex == -1)
+		return next({
+			status: 404,
+			message: 'character not found'
+		});
+
+	try {
+		var response = await rp({
+			method: 'POST',
+			json: true,
+			uri: 'https://graph.facebook.com/' + req.params.postId + '/comments',
+			form: {
+				message: req.body.message,
+				access_token: config.replyCharacters[characterIndex].accessToken
+			}
+		});
+
+		res.send(response);
+	} catch (err) {
+		next(err);
+	}
+
 })
 
 app.post('/api/previewAttachImage', previewUpload.single('image'), async(req, res, next) => {

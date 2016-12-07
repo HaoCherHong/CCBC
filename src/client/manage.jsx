@@ -194,7 +194,7 @@ class Manage extends React.Component {
 				console.error(err);
 			});
 	  	} else {
-	  		window.location = 'https://www.facebook.com/v2.8/dialog/oauth?client_id=' + config.appId + ' &scope=manage_pages,publish_pages,read_page_mailboxes,pages_show_list,pages_manage_cta,pages_manage_instant_articles&response_type=code&redirect_uri=' + encodeURIComponent(redirectUri);
+	  		window.location = 'https://www.facebook.com/v2.8/dialog/oauth?client_id=' + config.appId + ' &scope=publish_actions,manage_pages,publish_pages,read_page_mailboxes,pages_show_list,pages_manage_cta,pages_manage_instant_articles&response_type=code&redirect_uri=' + encodeURIComponent(redirectUri);
 	  	}
 	}
 

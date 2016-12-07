@@ -80,14 +80,22 @@ var exchangeToken = async(shortLivedToken) => {
 	return longLivedToken;
 }
 
+var getPageToken = async(pageId, accessToken) => {
+	var pageAccessToken = await rp('https://graph.facebook.com/' + pageId + '?fields=access_token&access_token=' + accessToken);
+	return JSON.parse(pageAccessToken)['access_token'];
+}
+
 var updatePageToken = async() => {
 	console.log('Updating page token...');
-	var pageAccessToken = await rp('https://graph.facebook.com/' + config.pageId + '?fields=access_token&access_token=' + config.longLivedToken);
-	console.log('pageAccessToken: ' + pageAccessToken);
-	pageAccessToken = JSON.parse(pageAccessToken)['access_token'];
+	var pageAccessToken = await getPageToken(config.pageId, config.longLivedToken);
 	config.pageToken = pageAccessToken;
+
+	console.log('Updating reply characters\' page tokens...')
+	for(var i in config.replyCharacters)
+		config.replyCharacters[i].accessToken = await getPageToken(config.replyCharacters[i].pageId, config.longLivedToken);
+	
 	config.save();
-	console.log('Page token updated.');
+	console.log('Page tokens updated.');
 };
 
 
