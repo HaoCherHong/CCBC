@@ -157,12 +157,12 @@ class Reply extends React.Component {
 							<div className="fb-post" data-width="auto" data-href={'https://www.facebook.com/' + config.pageId + '/posts/' + this.state.postId + '/'}></div>
 							<form onSubmit={this.onFormSubmit}>
 								<div className="form-group">
-									<label htmlFor="character">哭哭角色</label>
 									{
 										this.state.form.character && (
 											<img alt="哭哭角色大頭貼" src={'https://graph.facebook.com/' + this.state.form.character + '/picture'}/>
 										)
 									}
+									<label htmlFor="character">哭哭角色</label>
 									<select className="form-control" id="character" name="character" value={this.state.form.ccImageStyle} onChange={this.onFormUpdate}>
 									{
 										this.state.characters.map((character)=>(
