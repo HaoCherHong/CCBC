@@ -230,7 +230,7 @@ app.post('/api/reply/:postId', async(req, res, next) => {
 		var response = await rp({
 			method: 'POST',
 			json: true,
-			uri: 'https://graph.facebook.com/' + req.params.postId + '/comments',
+			uri: 'https://graph.facebook.com/' + config.pageId + '_' + req.params.postId + '/comments',
 			form: {
 				message: req.body.message,
 				access_token: config.replyCharacters[characterIndex].accessToken
