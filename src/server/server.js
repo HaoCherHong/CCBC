@@ -113,6 +113,23 @@ app.get('/api/queueNumber', async(req, res, next) => {
 	res.json(count);
 })
 
+app.get('/api/posts/:serialNumber', async(req, res, next) => {
+	var post = await model.Post.findOne({
+		serialNumber: parseInt(req.params.serialNumber)
+	}, {
+		_id: 0,
+		postId: 1
+	});
+
+	if(!post)
+		return next({
+			status: 404,
+			message: 'post not found'
+		});
+
+	res.json(post);
+})
+
 app.get('/api/replyCharacters', (req, res, next) => {
 	//copy from config
 	var characters = []

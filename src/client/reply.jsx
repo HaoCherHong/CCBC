@@ -25,6 +25,16 @@ const loadFBSDK = () => {
 	})
 }
 
+const checkStatus = (response) => {
+	if (response.status >= 200 && response.status < 300) {
+		return response;
+	} else {
+		var error = new Error(response.statusText);
+		error.response = response;
+		throw error;
+	}
+}
+
 class Reply extends React.Component {
 	constructor(props) {
 		super(props);
@@ -59,13 +69,15 @@ class Reply extends React.Component {
 		});
 
 		//Send AJAX Request
-		fetch('/api/reply/' + this.props.params.postId, {
+		fetch('/api/reply/' + this.state.postId, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(this.state.form)
-		}).then((response) => (
+		})
+		.then(checkStatus)
+		.then((response) => (
 			response.json()
 		)).then((result) => {
 			window.location = 'https://facebook.com/' + result.id;
@@ -89,10 +101,30 @@ class Reply extends React.Component {
 	}
 
 	async componentDidMount() {
-		await loadFBSDK();
+		var errorHandler = (err) => {
+			this.state.messages.error = err.message;
+			this.setState({
+				messages: this.state.messages
+			});
+			console.error(err)
+		};
+
+		fetch('/api/posts/' + this.props.params.serialNumber)
+			.then(checkStatus)
+			.then((response)=>(response.json()))
+			.then((post)=>{
+				this.setState({
+					postId: post.postId
+				}, ()=>{
+					//On postId set
+					loadFBSDK();
+				});
+			})
+			.catch(errorHandler)
 
 		//load reply characters
 		fetch('/api/replyCharacters')
+			.then(checkStatus)
 			.then((response)=>(response.json()))
 			.then((characters)=>{
 				if(characters.length > 0)
@@ -102,14 +134,7 @@ class Reply extends React.Component {
 					form: this.state.form
 				});
 			})
-			.catch((err) => {
-				//Other error, show error message
-				this.state.messages.error = err.message;
-				this.setState({
-					messages: this.state.messages
-				});
-				console.error(err)
-			})
+			.catch(errorHandler)
 	}
 
 	render() {
@@ -126,21 +151,33 @@ class Reply extends React.Component {
 						<div className="alert alert-danger" role="alert">{this.state.messages.error}</div> 
 					)
 				}
-				<div className="fb-post" data-width="auto" data-href={'https://www.facebook.com/' + config.pageId + '/posts/' + this.props.params.postId + '/'}></div>
-				<form onSubmit={this.onFormSubmit}>
-					<div className="form-group">
-						<label htmlFor="character">哭哭角色</label>
-						<select className="form-control" id="character" name="character" value={this.state.form.ccImageStyle} onChange={this.onFormUpdate}>
-						{
-							this.state.characters.map((character)=>(
-								<option key={character.pageId} value={character.pageId}>{character.name}</option>
-							))			
-						}
-						</select>
-						<textarea id="message" name="message" className="form-control" rows="3" placeholder="至少10個字" value={this.state.form.message} onChange={this.onFormUpdate}></textarea>
-						<button type="submit" className="btn btn-primary btn-block" disabled={!this.validateForm() || this.state.status != 'idle'}>哭哭 😢</button>
-					</div>
-				</form>
+				{
+					this.state.postId && (
+						<div>
+							<div className="fb-post" data-width="auto" data-href={'https://www.facebook.com/' + config.pageId + '/posts/' + this.state.postId + '/'}></div>
+							<form onSubmit={this.onFormSubmit}>
+								<div className="form-group">
+									<label htmlFor="character">哭哭角色</label>
+									{
+										this.state.form.character && (
+											<img alt="哭哭角色大頭貼" src={'https://graph.facebook.com/' + this.state.form.character + '/picture'}/>
+										)
+									}
+									<select className="form-control" id="character" name="character" value={this.state.form.ccImageStyle} onChange={this.onFormUpdate}>
+									{
+										this.state.characters.map((character)=>(
+											<option key={character.pageId} value={character.pageId}>{character.name}</option>
+										))			
+									}
+									</select>
+									<textarea id="message" name="message" className="form-control" rows="3" placeholder="至少10個字" value={this.state.form.message} onChange={this.onFormUpdate}></textarea>
+									<button type="submit" className="btn btn-primary btn-block" disabled={!this.validateForm() || this.state.status != 'idle'}>哭哭 😢</button>
+								</div>
+							</form>
+						</div>
+					)
+				}
+				
 			</div>
 		)
 	}

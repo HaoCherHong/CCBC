@@ -35,7 +35,7 @@ ReactDom.render((
 	<Router history={hashHistory}>
 		<Route path="/" component={App}>
 			<IndexRoute component={CC}/>
-			<Route path="reply/:postId" component={Reply}/>
+			<Route path="reply/:serialNumber" component={Reply}/>
 		</Route>
 	</Router>
 ), document.getElementById('app'));
