@@ -159,6 +159,7 @@ app.post('/api/cc', upload.single('attachImage'), async(req, res, next) => {
 			//Prepare CCImage Options
 			if (req.body.ccImageStyle == 'facebook')
 				options.ccImageOptions = {
+					style: 'facebook',
 					fontColor: '#3b5998',
 					backgroundColor: '#ffffff',
 					watermarkId: 'facebook'
@@ -180,12 +181,20 @@ app.post('/api/cc', upload.single('attachImage'), async(req, res, next) => {
 })
 
 app.post('/api/previewAttachImage', previewUpload.single('image'), async(req, res, next) => {
-	if (!req.file)
+	if (!req.file && !req.body.file)
 		return next({
 			message: 'image required'
 		});
-	var previewDataUrl = await attachImage(req.file.buffer);
-	res.send(previewDataUrl);
+	try {
+		if(req.file)
+			var previewDataUrl = await attachImage(req.file.buffer);
+		else
+			var previewDataUrl = await attachImage(req.body.file.path);
+
+		res.send(previewDataUrl);
+	} catch(err) {
+		next(err);
+	}
 })
 
 app.use('/api/manage', manage);
