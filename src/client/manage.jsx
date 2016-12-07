@@ -114,9 +114,10 @@ class Manage extends React.Component {
 		this.setState({
 			currentPost: post,
 			previewDataUrl: null
+		}, ()=>{
+			//Update Embed Post after state updated
+			FB.XFBML.parse();
 		});
-
-		FB.XFBML.parse();
 
 		if(post.attachImage) {
 			fetch('/api/previewAttachImage', {
