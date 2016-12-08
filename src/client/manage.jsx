@@ -38,7 +38,7 @@ const checkStatus = (response) => {
 }
 
 const getTimeString = (date) => (
-	date.getMonth() + '/' + ('0' + date.getDate()).substr(-2) + ' ' + ('0' + date.getHours()).substr(-2) + ':' + ('0' + date.getMinutes()).substr(-2)
+	(date.getMonth() + 1) + '/' + ('0' + date.getDate()).substr(-2) + ' ' + ('0' + date.getHours()).substr(-2) + ':' + ('0' + date.getMinutes()).substr(-2)
 )
 
 const getPreviewCCImageUrl = (post) => (
@@ -97,7 +97,8 @@ class Manage extends React.Component {
 		console.log(tab);
 		this.setState({
 			tab: tab,
-			currentPost: null
+			currentPost: null,
+			posts: []
 		});
 		this.load(tab);
 	}
@@ -253,7 +254,7 @@ class Manage extends React.Component {
 									<h4>{'#哭哭北科' + this.state.currentPost.serialNumber}</h4>
 									{
 										this.state.currentPost.postId && (
-											<div className="fb-post" data-width="500" data-href={'https://www.facebook.com/' + config.pageId + '/posts/' + this.state.currentPost.postId + '/'}></div>
+											<div className="fb-post" data-width="auto" data-href={'https://www.facebook.com/' + config.pageId + '/posts/' + this.state.currentPost.postId + '/'}></div>
 										)
 									}
 									{

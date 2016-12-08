@@ -28,13 +28,17 @@ var getProcessedImage = function(input, options) {
 		if(!options)
 			options = {};
 
-		var image = new Image;
-
-		await new Promise((resolve, reject) => {
-			image.onerror = reject;
-			image.onload = resolve;
-			image.src = imageBuffer;
-		});
+		try {
+			//Load the image
+			var image = new Image;
+			await new Promise((resolve, reject) => {
+				image.onerror = reject;
+				image.onload = resolve;
+				image.src = imageBuffer;
+			});
+		} catch(err) {
+			return reject(err);
+		}
 
 		//Prepare arguments
 		var watermarkHeight = options.watermarkHeight || 30,

@@ -127,11 +127,11 @@ app.post('/updatePageToken', async(req, res, next) => {
 		var longLivedToken = await exchangeToken(accessToken);
 		console.log(longLivedToken);
 		config.longLivedToken = longLivedToken;
+		await updatePageToken();
 		config.save();
 		res.send({
 			success: true
 		});
-		updatePageToken();
 	} catch (err) {
 		console.error(err);
 		next(err);
