@@ -1,31 +1,11 @@
 var React = require('react'),
 	ReactDom = require('react-dom'),
-	config = require('./config.js');
+	config = require('./config.js'),
+	fbsdk = require('./fbsdk.js');
 
 require('whatwg-fetch');
 
 window.React = React;
-
-const loadFBSDK = () => {
-	return new Promise((resolve, reject) => {
-		window.fbAsyncInit = function() {
-			FB.init({
-		    	appId      : config.appId,
-		    	version    : 'v2.8'
-		    });
-		    FB.AppEvents.logPageView();
-		    resolve();
-		};
-		(function(d, s, id) {
-			var js, fjs = d.getElementsByTagName(s)[0];
-			if (d.getElementById(id)) 
-				return;
-			js = d.createElement(s); js.id = id;
-			js.src = "//connect.facebook.net/en_US/sdk.js";
-			fjs.parentNode.insertBefore(js, fjs);
-		}(document, 'script', 'facebook-jssdk'));
-	})
-}
 
 const checkStatus = (response) => {
 	if (response.status >= 200 && response.status < 300) {
@@ -61,7 +41,7 @@ class Manage extends React.Component {
 	}
 
 	async componentDidMount() {
-		await loadFBSDK();
+		await fbsdk();
 		this.load(this.state.tab);
 	}
 

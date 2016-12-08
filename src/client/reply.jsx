@@ -1,29 +1,8 @@
 var React = require('react'),
+	fbsdk = require('./fbsdk.js'),
 	config = require('./config.js');
 
 require('whatwg-fetch');
-
-const loadFBSDK = () => {
-	return new Promise((resolve, reject) => {
-		window.fbAsyncInit = function() {
-			FB.init({
-		    	appId      : config.appId,
-		    	xfbml      : true,
-		    	version    : 'v2.8'
-		    });
-		    FB.AppEvents.logPageView();
-		    resolve();
-		};
-		(function(d, s, id) {
-			var js, fjs = d.getElementsByTagName(s)[0];
-			if (d.getElementById(id)) 
-				return;
-			js = d.createElement(s); js.id = id;
-			js.src = "//connect.facebook.net/en_US/sdk.js";
-			fjs.parentNode.insertBefore(js, fjs);
-		}(document, 'script', 'facebook-jssdk'));
-	})
-}
 
 const checkStatus = (response) => {
 	if (response.status >= 200 && response.status < 300) {
@@ -132,9 +111,12 @@ class Reply extends React.Component {
 						this.setState({
 							characters: characters,
 							form: this.state.form
-						}, ()=>{
+						}, async ()=>{
 							//On postId set
-							loadFBSDK();
+							if(window.FB != undefined)
+								FB.XFBML.parse();
+							else
+								fbsdk();
 						});
 					});
 			})
