@@ -210,7 +210,7 @@ app.post('/api/cc', upload.single('attachImage'), async(req, res, next) => {
 })
 
 app.post('/api/reply/:postId', async(req, res, next) => {
-	if(!req.body.message)
+	if(!req.body.message || req.body.message.trim().length == 0)
 		return next({
 			message: 'message required'
 		});

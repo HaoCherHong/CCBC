@@ -54,9 +54,13 @@ class Reply extends React.Component {
 	}
 
 	onFormUpdate(e) {
-		this.state.form[e.target.name] = e.target.value;
+		var name = e.target.name;
+		this.state.form[name] = e.target.value;
 		this.setState({
 			form: this.state.form
+		}, ()=> {
+			if(name == 'character')
+				FB.XFBML.parse();
 		});
 	}
 
@@ -93,7 +97,7 @@ class Reply extends React.Component {
 
 	validateForm() {
 		var form = this.state.form;
-		if(form.message.length < 10)
+		if(form.message.trim().length == 0)
 			return false;
 		if(!form.character)
 			return false;
@@ -115,24 +119,24 @@ class Reply extends React.Component {
 			.then((post)=>{
 				this.setState({
 					postId: post.postId
-				}, ()=>{
-					//On postId set
-					loadFBSDK();
 				});
 			})
-			.catch(errorHandler)
-
-		//load reply characters
-		fetch('/api/replyCharacters')
-			.then(checkStatus)
-			.then((response)=>(response.json()))
-			.then((characters)=>{
-				if(characters.length > 0)
-					this.state.form.character = characters[0].pageId;
-				this.setState({
-					characters: characters,
-					form: this.state.form
-				});
+			.then(()=>{
+				//load reply characters
+				return fetch('/api/replyCharacters')
+					.then(checkStatus)
+					.then((response)=>(response.json()))
+					.then((characters)=>{
+						if(characters.length > 0)
+							this.state.form.character = characters[0].pageId;
+						this.setState({
+							characters: characters,
+							form: this.state.form
+						}, ()=>{
+							//On postId set
+							loadFBSDK();
+						});
+					});
 			})
 			.catch(errorHandler)
 	}
@@ -155,24 +159,28 @@ class Reply extends React.Component {
 					this.state.postId && (
 						<div>
 							<div className="fb-post" data-width="auto" data-href={'https://www.facebook.com/' + config.pageId + '/posts/' + this.state.postId + '/'}></div>
-							<form onSubmit={this.onFormSubmit}>
-								<div className="form-group">
-									{
-										this.state.form.character && (
-											<img alt="哭哭角色大頭貼" src={'https://graph.facebook.com/' + this.state.form.character + '/picture'}/>
-										)
-									}
-									<label htmlFor="character">哭哭角色</label>
-									<select className="form-control" id="character" name="character" value={this.state.form.ccImageStyle} onChange={this.onFormUpdate}>
-									{
-										this.state.characters.map((character)=>(
-											<option key={character.pageId} value={character.pageId}>{character.name}</option>
-										))			
-									}
-									</select>
-									<textarea id="message" name="message" className="form-control" rows="3" placeholder="至少10個字" value={this.state.form.message} onChange={this.onFormUpdate}></textarea>
+							<form className="row" onSubmit={this.onFormSubmit}>
+								<div className="col-md-7">
+									<div className="form-group">
+										<label htmlFor="character">哭哭角色</label>
+										<select className="form-control" id="character" name="character" value={this.state.form.ccImageStyle} onChange={this.onFormUpdate}>
+										{
+											this.state.characters.map((character)=>(
+												<option key={character.pageId} value={character.pageId}>{character.name}</option>
+											))			
+										}
+										</select>
+									</div>
+									<textarea id="message" name="message" className="form-control" rows="3" placeholder="回覆內容" value={this.state.form.message} onChange={this.onFormUpdate}></textarea>
 									<button type="submit" className="btn btn-primary btn-block" disabled={!this.validateForm() || this.state.status != 'idle'}>哭哭 😢</button>
+
 								</div>
+								{
+									this.state.form.character && (
+										<div className="fb-page col-md-5 text-right" style={{paddingTop: '25px'}}
+											data-href={'https://www.facebook.com/' + this.state.form.character} data-width="450" data-hide-cta="true" data-adapt-container-width="true"></div>
+									)
+								}
 							</form>
 						</div>
 					)
