@@ -40,11 +40,14 @@ app.use(session({
 
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({
-	extended: false
+	extended: false,
+	limit: '10mb'
 }));
 
 // parse application/json
-app.use(bodyParser.json());
+app.use(bodyParser.json({
+	limit: '10mb'
+}));
 
 var newPost = async(params) => {
 
@@ -245,15 +248,17 @@ app.post('/api/reply/:postId', async(req, res, next) => {
 })
 
 app.post('/api/previewAttachImage', previewUpload.single('image'), async(req, res, next) => {
-	if (!req.file && !req.body.file)
+	if (!req.file && !req.body.file && !req.body.base64)
 		return next({
 			message: 'image required'
 		});
 	try {
 		if(req.file)
 			var previewDataUrl = await attachImage(req.file.buffer);
-		else
+		else if(req.body.file)
 			var previewDataUrl = await attachImage(req.body.file.path);
+		else 
+			var previewDataUrl = await attachImage(new Buffer(req.body.base64, 'base64'));
 
 		res.send(previewDataUrl);
 	} catch(err) {

@@ -2,6 +2,9 @@ var fs = require('fs'),
 	Canvas = require('canvas'),
 	Image = Canvas.Image;
 
+const maxWidth = 2048,
+	maxWHeight = 2048;
+
 const getWatermark = async() => {
 	return new Promise((resolve, reject) => {
 		fs.readFile(__dirname + '/watermarks/watermark_image.png', function(err, watermark) {
@@ -39,6 +42,10 @@ var getProcessedImage = function(input, options) {
 		} catch(err) {
 			return reject(err);
 		}
+
+		//Check the size
+		if(image.width > maxWidth || image.height > maxWHeight)
+			return reject(new Error('Image is too large, max: ' + maxWidth + 'x' + maxWHeight));
 
 		//Prepare arguments
 		var watermarkHeight = options.watermarkHeight || 30,

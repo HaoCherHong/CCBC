@@ -1,5 +1,6 @@
 var React = require('react'),
-	config = require('./config.js');
+	config = require('./config.js'),
+	resize = require('./image-resize.js');
 
 require('whatwg-fetch');
 
@@ -48,7 +49,7 @@ class CC extends React.Component {
 		});
 	}
 
-	validateAndPreviewAttachImage(files) {
+	async validateAndPreviewAttachImage(files) {
 		if(files.length == 0) {
 			this.setState({
 				previewDataUrl: null
@@ -57,16 +58,22 @@ class CC extends React.Component {
 		}
 
 		var file = files[0];
-		var data = new FormData();
-		data.append('image', file);
+		var dataURL = await resize(file);
+		var base64 = /^data:image\/png;base64,(.+)/.exec(dataURL)[1];
 
 		this.setState({
 			loadingPreview: true
 		});
 
+		var start = new Date();
 		fetch('/api/previewAttachImage', {
 			method: 'POST',
-			body: data
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				base64: base64
+			})
 		}).then(checkStatus)
 		.then((response) => (
 			response.text()
@@ -76,6 +83,7 @@ class CC extends React.Component {
 				previewDataUrl: result,
 				loadingPreview: false
 			});
+			console.log('image loaded in ' + ((new Date() - start) / 1000) + ' seconds');
 		}).catch((err)=>{
 			this.setState({
 				messages: {
