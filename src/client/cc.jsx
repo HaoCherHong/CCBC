@@ -57,15 +57,16 @@ class CC extends React.Component {
 			return;
 		}
 
-		var file = files[0];
-		var dataURL = await resize(file);
-		var base64 = /^data:image\/png;base64,(.+)/.exec(dataURL)[1];
-
 		this.setState({
 			loadingPreview: true
 		});
 
+		var file = files[0],
+			dataURL = await resize(file),
+			base64 = /^data:image\/png;base64,(.+)/.exec(dataURL)[1];
+
 		var start = new Date();
+		
 		fetch('/api/previewAttachImage', {
 			method: 'POST',
 			headers: {
