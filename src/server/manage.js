@@ -35,7 +35,7 @@ app.handleManageRequest = async(req, res, next) => {
 			throw 'user is not admin of this page';
 
 		req.session.isAdmin = true;
-		next();
+		res.redirect(req.path);
 	} catch (err) {
 		res.redirect('/');
 	}

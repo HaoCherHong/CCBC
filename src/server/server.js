@@ -72,7 +72,7 @@ var newPost = async(params) => {
 		mode: params.mode,
 		attachImage: params.attachImage,
 		ccImageOptions: params.ccImageOptions,
-		approved: true
+		approved: false
 	};
 
 	if(options.attachImage)
